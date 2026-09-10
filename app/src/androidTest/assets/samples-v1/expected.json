@@ -1,0 +1,30 @@
+{
+  "empty": {
+    "expectedAreaMm2": 0.0,
+    "valid": true
+  },
+  "half": {
+    "expectedAreaMm2": 300.125,
+    "valid": true
+  },
+  "full": {
+    "expectedAreaMm2": 600.25,
+    "valid": true
+  },
+  "leaf-hole": {
+    "expectedAreaMm2": 415.5,
+    "valid": true
+  },
+  "perspective": {
+    "expectedAreaMm2": 300.125,
+    "valid": true
+  },
+  "missing-markers": {
+    "expectedAreaMm2": 300.125,
+    "valid": false
+  },
+  "yellow": {
+    "expectedAreaMm2": 600.25,
+    "valid": true
+  }
+}

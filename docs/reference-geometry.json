@@ -1,0 +1,72 @@
+{
+  "inspection_date": "2026-09-10",
+  "print_contract": "User specifies actual size / 100%, with no printer scaling.",
+  "application_target": {
+    "aperture_area_cm2": 6.0,
+    "aperture_area_mm2": 600.0,
+    "ideal_circle_diameter_mm": 27.63953195770684,
+    "authority": "User clarification: It should be 6 cm^2.",
+    "note": "Target for the new template; original PDF remains unchanged."
+  },
+  "mask_pdf": {
+    "filename": "LI-6800-mask.pdf",
+    "bytes": 345074,
+    "sha256": "8dbf324a2f4886218dc7214d2a3b5b6de25125e46d51d00323a2044d38fb05d7",
+    "page_size_mm": [
+      210.00155555555554,
+      297.0000833333333
+    ],
+    "apertures": [
+      {
+        "center_from_page_top_left_mm": [
+          85.22440833333333,
+          27.9963386111111
+        ],
+        "diameter_x_mm": 27.49973333333334,
+        "diameter_y_mm": 27.5000861111111,
+        "ideal_ellipse_area_from_bounds_cm2": 5.939534613312376,
+        "note": "Bounds of the circle's cubic Bezier path, not the cut paper or hardware bore."
+      },
+      {
+        "center_from_page_top_left_mm": [
+          125.22432833333333,
+          27.9963386111111
+        ],
+        "diameter_x_mm": 27.49973333333333,
+        "diameter_y_mm": 27.5000861111111,
+        "ideal_ellipse_area_from_bounds_cm2": 5.939534613312374,
+        "note": "Bounds of the circle's cubic Bezier path, not the cut paper or hardware bore."
+      },
+      {
+        "center_from_page_top_left_mm": [
+          85.22440833333333,
+          67.99632916666665
+        ],
+        "diameter_x_mm": 27.49973333333334,
+        "diameter_y_mm": 27.5000861111111,
+        "ideal_ellipse_area_from_bounds_cm2": 5.939534613312376,
+        "note": "Bounds of the circle's cubic Bezier path, not the cut paper or hardware bore."
+      },
+      {
+        "center_from_page_top_left_mm": [
+          125.22432833333333,
+          67.99632916666665
+        ],
+        "diameter_x_mm": 27.49973333333333,
+        "diameter_y_mm": 27.5000861111111,
+        "ideal_ellipse_area_from_bounds_cm2": 5.939534613312374,
+        "note": "Bounds of the circle's cubic Bezier path, not the cut paper or hardware bore."
+      }
+    ]
+  },
+  "calibration_pdf": {
+    "filename": "calibration_pad_pro.pdf",
+    "bytes": 1382146,
+    "sha256": "9058eb1641443ec6f49095df27f2e80b6ddb1639fd3e49665a59577cab9c2116"
+  },
+  "photo": {
+    "filename": "2026-09-10 12.40.27.jpg",
+    "bytes": 2205283,
+    "sha256": "1cfa5ac5cdc296f06c893c8c5476769a72e8efa90fbcab66b6921daf581cafc3"
+  }
+}

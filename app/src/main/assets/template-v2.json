@@ -1,0 +1,98 @@
+{
+  "id": "LI6800-6-V2",
+  "dictionary": "DICT_4X4_50",
+  "dictionaryCode": 0,
+  "apertureAreaMm2": 600.0,
+  "apertureRadiusMm": 13.81976597885342,
+  "coordinateSystem": "origin at opening center, x right, y down, millimetres",
+  "markerSideMm": 8.0,
+  "markers": [
+    {
+      "id": 20,
+      "centerMm": [
+        -42.0,
+        -25.0
+      ],
+      "sideMm": 8.0
+    },
+    {
+      "id": 21,
+      "centerMm": [
+        -18.0,
+        -25.0
+      ],
+      "sideMm": 8.0
+    },
+    {
+      "id": 22,
+      "centerMm": [
+        8.0,
+        -25.0
+      ],
+      "sideMm": 8.0
+    },
+    {
+      "id": 23,
+      "centerMm": [
+        24.0,
+        -25.0
+      ],
+      "sideMm": 8.0
+    },
+    {
+      "id": 24,
+      "centerMm": [
+        -42.0,
+        25.0
+      ],
+      "sideMm": 8.0
+    },
+    {
+      "id": 25,
+      "centerMm": [
+        -18.0,
+        25.0
+      ],
+      "sideMm": 8.0
+    },
+    {
+      "id": 26,
+      "centerMm": [
+        8.0,
+        25.0
+      ],
+      "sideMm": 8.0
+    },
+    {
+      "id": 27,
+      "centerMm": [
+        24.0,
+        25.0
+      ],
+      "sideMm": 8.0
+    },
+    {
+      "id": 28,
+      "centerMm": [
+        -42.0,
+        0.0
+      ],
+      "sideMm": 8.0
+    },
+    {
+      "id": 29,
+      "centerMm": [
+        -24.0,
+        0.0
+      ],
+      "sideMm": 8.0
+    }
+  ],
+  "minimumVisibleMarkers": 4,
+  "originalFrontTipRadiusMm": 20.0,
+  "protectedFrontArcDegrees": [
+    -45,
+    45
+  ],
+  "printScale": "Actual size / 100%, A4, no Fit to page"
+}

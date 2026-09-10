@@ -1,0 +1,59 @@
+<resources>
+    <string name="app_name">Leaf Area</string>
+    <string name="instrument">LI-6800 · 6 cm² aperture</string>
+    <string name="headline">Measure what’s inside.</string>
+    <string name="intro" formatted="false">Print the marker cutout at 100%. Put a flat leaf on a white backing, with the cutout on top. Keep at least four markers visible.</string>
+    <string name="camera">Camera</string><string name="photo">Open photo</string>
+    <string name="template">Cutout PDF</string><string name="history">Saved</string>
+    <string name="ready">Calibrated</string><string name="looking">Looking for markers</string>
+    <string name="checking">Checking frame…</string><string name="no_frame">Fit the opening and markers in the frame</string>
+    <string name="marker_count">%1$d of %2$d markers · %3$.2f mm fit error</string>
+    <string name="area_label">LEAF INSIDE OPENING</string><string name="area_cm">%1$.3f cm²</string>
+    <string name="area_mm">%1$.1f mm²</string><string name="coverage">%1$.1f%% filled</string>
+    <string name="none">—</string><string name="source_frame">Camera frame and detected markers</string>
+    <string name="selection_image">Leaf selection inside the opening</string>
+    <string name="overlay_hint">Mint overlay = tissue included. Holes and the area outside the circle are excluded.</string>
+    <string name="backing">Backing</string><string name="white">White paper</string><string name="blue">Blue mat</string>
+    <string name="sensitivity">Leaf sensitivity</string><string name="sensitivity_help">Adjust until the overlay follows the leaf, including yellow or brown tissue.</string>
+    <string name="freeze">Freeze &amp; review</string>
+    <string name="freeze_short">Freeze</string>
+    <string name="review">Review selection</string>
+
+
+    <string name="sample_id">Sample ID (optional)</string><string name="save">Save measurement</string>
+    <string name="saved_message">Saved on this device. Open Saved to share the image, mask and CSV.</string>
+    <string name="empty_history">No saved measurements yet.</string><string name="share">Share</string><string name="close">Close</string>
+    <string name="synthetic">Synthetic measurement</string>
+    <string name="camera_permission">Camera access is needed for live measurement. Photo import works without it.</string>
+    <string name="grant_camera">Allow camera</string><string name="open_settings">App settings</string>
+    <string name="camera_unavailable">Camera unavailable. Try photo import or another camera app.</string>
+    <string name="image_failed">Could not read this image. Try a JPEG or PNG.</string>
+    <string name="processing_failed">Could not analyze this frame. Try a sharper photo.</string>
+    <string name="storage_failed">Could not save or share the file. Please try again.</string>
+    <string name="need_four">Show at least four markers from one printed V2 cutout.</string>
+    <string name="spread_markers">Show markers on both sides of the opening, with markers in front of and behind the opening.</string>
+    <string name="duplicate_markers">Use one cutout at a time. Duplicate marker IDs are visible.</string>
+    <string name="fit_failed">Calibration is inconsistent. Flatten the cutout and move closer.</string>
+    <string name="too_small">Move closer so the markers are sharp and larger.</string>
+    <string name="outside_frame">Keep the complete opening inside the photo.</string>
+    <string name="blurred">Hold steady and focus on the cutout.</string>
+    <string name="build_note">First iteration · check the overlay and print scale. Accuracy on real leaves has not been established.</string>
+    <string name="help">How to measure</string><string name="help_body" formatted="false">1. Share or print the cutout PDF at Actual size / 100% on A4. Check the 50 mm line with a ruler. Cut out the center circle.\n\n2. Place the leaf flat on a matte white backing, with the marked cutout on top. For yellow or brown leaves, a blue mat can also help. Match the Backing setting.\n\n3. Keep the opening and at least four markers visible. Use even lighting, avoid shadows, and hold the camera nearly overhead.\n\n4. Switch between Camera and Circle &amp; sensitivity. Both update live. Check the mint selection and adjust the slider. When tracking is lost, the last reading and its circle are retained. Freeze or Save captures that calibrated image. Detached dark rim shadows are excluded; shadows touching tissue may still be counted.\n\n5. Enter the result in cm² as S under LI-6800 Constants → Gas Exchange. The chamber aperture remains set to 6 cm². Keep the measured leaf region registered.\n\nA curved leaf, uneven print, glare, or a badly cut opening can bias the result. This app measures projected area, not the curved surface area.\n\nAll processing and saved results stay on your device. Sharing happens only when you choose it. Built with CameraX and OpenCV 4.13 (Apache 2.0).</string>
+    <string name="live">Live</string>
+    <string name="save_short">Save</string>
+    <string name="more">More</string>
+    <string name="circle_preview">Circle preview</string>
+    <string name="camera_preview">Camera preview</string>
+    <string name="adjust_mode">Sensitivity</string>
+    <string name="circle_sensitivity">Circle &amp; sensitivity</string>
+    <string name="circle_waiting">The calibrated opening will appear here.</string>
+    <string name="last_reading">Last reading · tracking lost</string>
+    <string name="live_calibrated">Live · calibrated</string>
+    <string name="frozen_reading">Frozen reading</string>
+    <string name="sensitivity_value">Leaf sensitivity · %1$d%%</string>
+    <string name="rim_filter_hint">Detached dark rim shadows are excluded.</string>
+    <string name="saving_last_reading">Saving the last calibrated image, captured before tracking was lost.</string>
+    <string name="template_step">Mask STEP · 0.4 mm</string>
+    <string name="switch_camera">Switch camera</string>
+    <string name="camera_switch_failed">This lens is unavailable. Switched to another camera.</string>
+</resources>

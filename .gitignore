@@ -1,0 +1,44 @@
+.gradle/
+.gradle-project-cache/
+.gradle-user-home/
+.android-user-home/
+.build-logs/
+.idea/
+**/build/
+**/local.properties
+*.iml
+*.jks
+*.keystore
+tmp/
+
+# Generated deliverables and local tooling state.
+/output/
+.kotlin/
+.codex-remote-attachments/
+.codex/
+__pycache__/
+*.py[cod]
+*.apk
+*.aab
+*.apks
+*.hprof
+*.log
+
+# Local credentials and machine configuration.
+.env
+.env.*
+keystore.properties
+signing.properties
+*.p12
+*.pfx
+*.pem
+
+# Original reference inputs stay on this PC. App assets under src are tracked.
+/*.jpg
+/*.jpeg
+/*.png
+/*.pdf
+
+# Historical local toolchain preparation fixture.
+/tools/smoke-project/
+/tools/smoke-build.ps1
