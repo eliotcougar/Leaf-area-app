@@ -19,6 +19,7 @@ class MeasurementScreenTest {
         val test = InstrumentationRegistry.getInstrumentation()
         val context = test.targetContext
         test.uiAutomation.grantRuntimePermission(context.packageName, Manifest.permission.CAMERA)
+        context.getSharedPreferences("measurement-settings", 0).edit().remove("camera-key").commit()
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             lateinit var vm: AreaViewModel
             scenario.onActivity { vm = ViewModelProvider(it)[AreaViewModel::class.java]; vm.settings(sensitivity = .5f) }
@@ -119,9 +120,60 @@ class MeasurementScreenTest {
             // Emulator exposes front and rear cameras. Switching invalidates the old
             // camera frame and binds another camera while leaving the mode live.
             val oldSession = vm.cameraSessionId
+            val provider = androidx.camera.lifecycle.ProcessCameraProvider.getInstance(context).get(10, TimeUnit.SECONDS)
+            val rear = androidx.camera.core.CameraSelector.DEFAULT_BACK_CAMERA.filter(provider.availableCameraInfos).first()
+            if (rear.hasFlashUnit()) {
+                click(context.getString(R.string.flashlight_on))
+                node(context.getString(R.string.flashlight_off))
+                assertEquals(androidx.camera.core.TorchState.ON, rear.torchState.value)
+                screenshot("flashlight-on")
+                click(context.getString(R.string.circle_sensitivity))
+                assertEquals(androidx.camera.core.TorchState.ON, rear.torchState.value)
+                click(context.getString(R.string.camera))
+                click(context.getString(R.string.flashlight_off))
+                node(context.getString(R.string.flashlight_on))
+                assertEquals(androidx.camera.core.TorchState.OFF, rear.torchState.value)
+                // Leave the light on to verify camera switching releases it.
+                click(context.getString(R.string.flashlight_on))
+                node(context.getString(R.string.flashlight_off))
+            } else {
+                var flashlight: AccessibilityNodeInfo? = node(context.getString(R.string.flashlight_unavailable))
+                while (flashlight != null && !flashlight.isCheckable) flashlight = flashlight.parent
+                assertTrue("Unavailable flashlight must be disabled", flashlight != null && !flashlight.isEnabled)
+            }
+            assertEquals("Flashlight controls must not rebind the camera", oldSession, vm.cameraSessionId)
+            File(evidence, "flashlight.txt").writeText("rearFlashAvailable=${rear.hasFlashUnit()}\n")
             click(context.getString(R.string.switch_camera))
+            assertEquals("Opening the list must not switch cameras", oldSession, vm.cameraSessionId)
+            val front = cameraChoices(provider).first { it.lensFacing == androidx.camera.core.CameraSelector.LENS_FACING_FRONT }
+            click(front.label(context))
             assertTrue(vm.cameraSessionId > oldSession)
             assertNull(vm.state.measurement?.areaMm2)
+            assertEquals(InputMode.CAMERA, vm.state.mode)
+            assertEquals(front.key, vm.state.cameraKey)
+            SystemClock.sleep(1500)
+            assertEquals(androidx.camera.core.TorchState.OFF, rear.torchState.value)
+            assertEquals(InputMode.CAMERA, vm.state.mode)
+            click(context.getString(R.string.switch_camera))
+            var selectedNode: AccessibilityNodeInfo? = node(front.label(context))
+            while (selectedNode != null && !selectedNode.isCheckable) selectedNode = selectedNode.parent
+            assertTrue("Selected camera must be marked in the list", selectedNode?.isChecked == true)
+            screenshot("camera-list")
+            click(context.getString(R.string.close))
+            click(context.getString(R.string.circle_sensitivity))
+            click(context.getString(R.string.camera))
+            assertEquals(front.key, vm.state.cameraKey)
+            scenario.recreate()
+            scenario.onActivity { vm = ViewModelProvider(it)[AreaViewModel::class.java] }
+            assertEquals(front.key, vm.state.cameraKey)
+            // Missing/failed choices must not bind the default camera behind the user's back.
+            scenario.onActivity { vm.selectCamera("missing-camera-test") }
+            node(context.getString(R.string.camera_error_title))
+            assertEquals(InputMode.FROZEN, vm.state.mode)
+            assertEquals("missing-camera-test", vm.state.cameraKey)
+            click(context.getString(R.string.switch_camera))
+            click(front.label(context))
+            assertEquals(front.key, vm.state.cameraKey)
             assertEquals(InputMode.CAMERA, vm.state.mode)
             File(evidence, "bounds.txt").writeText("area=$areaBounds\ncamera=$cameraBounds\ncircle=$circleBounds\nsquare=$square\n")
         }

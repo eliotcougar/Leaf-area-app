@@ -26,6 +26,7 @@ data class AreaState(
     val busy: Boolean = false,
     val backing: Backing = Backing.WHITE,
     val sensitivity: Float = .5f,
+    val cameraKey: String? = null,
     val source: String = "",
     val synthetic: Boolean = false,
     val message: Int? = null,
@@ -41,7 +42,8 @@ data class AreaState(
 class AreaViewModel(application: Application) : AndroidViewModel(application) {
     private val preferences = application.getSharedPreferences("measurement-settings", android.content.Context.MODE_PRIVATE)
     var state by mutableStateOf(AreaState(sensitivity = preferences.getFloat("sensitivity", .5f)
-        .takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: .5f)); private set
+        .takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: .5f,
+        cameraKey = preferences.getString("camera-key", null))); private set
     val executor = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
     private val generation = AtomicLong()
@@ -62,13 +64,20 @@ class AreaViewModel(application: Application) : AndroidViewModel(application) {
         return token
     }
     fun startCamera() { begin(InputMode.CAMERA, "camera"); state = state.copy(busy = false) }
+    fun selectCamera(key: String) {
+        if (state.cameraKey == key && state.mode == InputMode.CAMERA) return
+        preferences.edit().putString("camera-key", key).apply()
+        state = state.copy(cameraKey = key)
+        startCamera()
+    }
     fun stopCamera() {
         generation.incrementAndGet()
         state = state.copy(mode = InputMode.FROZEN, busy = false)
         val captured = state.measurement
         executor.execute { workerMeasurement = captured }
     }
-    fun cameraError() {
+    fun cameraError(sessionId: Long = cameraSessionId) {
+        if (sessionId != generation.get() || state.mode != InputMode.CAMERA) return
         generation.incrementAndGet()
         state = state.copy(mode = InputMode.FROZEN, trackingLost = state.measurement?.valid == true,
             trackingIssue = R.string.camera_unavailable, message = R.string.camera_unavailable, busy = false)

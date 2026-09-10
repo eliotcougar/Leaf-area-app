@@ -9,21 +9,33 @@ inside that circle. Use automatic segmentation with backing/sensitivity controls
 the user explicitly does not want an add/erase editing workflow. Keep original PDF measurements separate from the intended
 600 mm² template geometry; do not silently rescale measurements to hide a mismatch.
 
-Current app is 0.4.0. The V2 PDF/STEP has ten 8 mm markers (IDs 20-29), two
+Current app is 0.4.4. The V2 PDF/STEP has ten 8 mm markers (IDs 20-29), two
 rear-center markers, and forward side wings. The user removed V1 support in 0.4.0;
 only V2 is calibrated. Never reuse IDs across scales. Keep demo workflows out of
 production and synthetic images under androidTest/assets, not main/assets.
 V2 backing dimensions are 111 x 68 x 0.4 mm. Preserve the central front R20 arc
-and 6 cm² opening. Read `docs/VALIDATION-v4.md` for current checks.
+and 6 cm² opening. Read `docs/VALIDATION-v044.md` for current checks.
 The main measurement screen is fixed and non-scrollable, with two live display
 modes: full-screen camera, and square circle preview with sensitivity below.
 Both show the area at the top. Keep the same camera session across display and
-tracking changes. Marker loss retains the last valid area, source, and timestamp
+tracking changes. The bottom row is Camera, a circular Save icon, and Calibration.
+Save is available in both modes, with no duplicate Save action in the top overlay.
+Marker loss retains the last valid area, source, and timestamp
 with an explicit held-reading label. Remove detached low-color rim shadows without
 shrinking the 6 cm² aperture; preserve interior tissue and colored leaf tips.
 The top overlay shows cm² without a mm²/coverage row. Remember leaf sensitivity.
-Camera switching cycles exposed logical/physical lenses and clears the previous
-camera's calibration. Menu exports both the PDF and the 0.4 mm STEP offline.
+The camera button opens a list of exposed cameras/physical lenses and marks the
+remembered selection. Do not silently fall back on binding or runtime failure.
+Distinguish automatic logical cameras from fixed physical lenses. Keep failed
+choices selectable for retry and ignore error callbacks from old sessions.
+Changing cameras clears the previous calibration. Menu exports PDF and STEP offline.
+CameraX 1.6.1 single-camera binding does not propagate selector physical IDs to
+streams. Keep CameraChoice.configureOutputs applying Camera2Interop physical IDs
+to BOTH Preview and ImageAnalysis builders. Verify resolved session/output IDs
+and camera-service streams, not just the remembered picker key. Keep autofocus.
+The flashlight toggle beside the camera picker uses the bound CameraX camera and
+observed torch state. Disable it when flash is unavailable. Keep torch on across
+display changes; turn it off when unbinding. Torch errors must not switch cameras.
 Deliver the minified, resource-shrunk, non-debuggable release build using the
 preserved signer. Verify the APK has no demo assets or V1 template data.
 

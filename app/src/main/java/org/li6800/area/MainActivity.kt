@@ -17,6 +17,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.Preview
+import androidx.camera.core.Camera
+import androidx.camera.core.CameraState
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.Observer
 import androidx.camera.view.PreviewView
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -33,7 +37,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -53,6 +60,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import java.io.File
 import java.nio.ByteBuffer
+import java.util.concurrent.atomic.AtomicBoolean
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -73,7 +81,8 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun CameraAnalysis(vm: AreaViewModel, cameraKey: String?, onCameras: (List<CameraChoice>) -> Unit,
-                           onUnavailable: (String?) -> Unit, modifier: Modifier) {
+                           onCamera: (Camera?) -> Unit,
+                           modifier: Modifier) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val previewView = remember(context) { PreviewView(context).apply {
@@ -84,29 +93,40 @@ private fun CameraAnalysis(vm: AreaViewModel, cameraKey: String?, onCameras: (Li
     DisposableEffect(lifecycleOwner, vm, previewView, cameraKey) {
         val sessionId = vm.cameraSessionId
         val future = ProcessCameraProvider.getInstance(context)
-        var disposed = false
+        val disposed = AtomicBoolean(false)
         var provider: ProcessCameraProvider? = null
         var analysis: ImageAnalysis? = null
         var preview: Preview? = null
+        var boundCamera: Camera? = null
+        var cameraState: LiveData<CameraState>? = null
+        val cameraObserver = Observer<CameraState> { status ->
+            if (!disposed.get() && status.error != null) {
+                Log.e("LeafArea", "Selected camera $cameraKey reported error ${status.error?.code}")
+                vm.cameraError(sessionId)
+            }
+        }
         future.addListener({
-            if (!disposed) {
+            if (!disposed.get()) {
                 try {
                     val cameraProvider = future.get()
                     provider = cameraProvider
                     val choices = cameraChoices(cameraProvider)
                     onCameras(choices)
-                    val choice = choices.firstOrNull { it.key == cameraKey } ?: choices.first()
+                    val choice = if (cameraKey == null) choices.first() else
+                        requireNotNull(choices.firstOrNull { it.key == cameraKey }) { "Selected camera is not available: $cameraKey" }
                     val selector = choice.selector
-                    val stream = ImageAnalysis.Builder()
+                    val previewBuilder = Preview.Builder()
+                    val analysisBuilder = ImageAnalysis.Builder()
                         .setResolutionSelector(ResolutionSelector.Builder().setResolutionStrategy(
                             ResolutionStrategy(Size(1280, 960), ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER)).build())
                         .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
                         .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                        .build()
+                    choice.configureOutputs(previewBuilder, analysisBuilder)
+                    val stream = analysisBuilder.build()
                     analysis = stream
                     stream.setAnalyzer(vm.executor) { proxy ->
                         try {
-                            if (disposed || sessionId != vm.cameraSessionId || !vm.shouldAnalyzeFrame()) return@setAnalyzer
+                            if (disposed.get() || sessionId != vm.cameraSessionId || !vm.shouldAnalyzeFrame()) return@setAnalyzer
                             val plane = proxy.planes[0]
                             check(plane.pixelStride == 4)
                             val buffer = plane.buffer.duplicate()
@@ -129,21 +149,29 @@ private fun CameraAnalysis(vm: AreaViewModel, cameraKey: String?, onCameras: (Li
                             vm.onCameraFrame(bitmap, sessionId)
                         } catch (error: Exception) {
                             Log.e("LeafArea", "Camera frame conversion failed", error)
-                            ContextCompat.getMainExecutor(context).execute { if (!disposed) vm.cameraError() }
+                            ContextCompat.getMainExecutor(context).execute { if (!disposed.get()) vm.cameraError(sessionId) }
                         } finally { proxy.close() }
                     }
-                    val livePreview = Preview.Builder().build()
+                    val livePreview = previewBuilder.build()
                     preview = livePreview
                     livePreview.setSurfaceProvider(previewView.surfaceProvider)
-                    cameraProvider.bindToLifecycle(lifecycleOwner, selector, livePreview, stream)
+                    val camera = cameraProvider.bindToLifecycle(lifecycleOwner, selector, livePreview, stream)
+                    boundCamera = camera
+                    onCamera(camera)
+                    cameraState = camera.cameraInfo.cameraState
+                    cameraState?.observe(lifecycleOwner, cameraObserver)
+                    Log.i("LeafArea", "Bound selected camera ${choice.key}; physical outputs=${choice.cameraId.takeIf { choice.physical }}")
                 } catch (error: Exception) {
                     Log.e("LeafArea", "Binding camera failed", error)
-                    onUnavailable(cameraKey)
+                    vm.cameraError(sessionId)
                 }
             }
         }, ContextCompat.getMainExecutor(context))
         onDispose {
-            disposed = true
+            disposed.set(true)
+            onCamera(null)
+            boundCamera?.let { if (it.cameraInfo.hasFlashUnit()) it.cameraControl.enableTorch(false) }
+            cameraState?.removeObserver(cameraObserver)
             analysis?.let { it.clearAnalyzer(); provider?.unbind(it) }
             preview?.let { provider?.unbind(it) }
         }
@@ -165,8 +193,8 @@ private fun AreaScreen(vm: AreaViewModel = viewModel()) {
     var permissionDenied by rememberSaveable { mutableStateOf(false) }
     var requestedCamera by rememberSaveable { mutableStateOf(false) }
     var availableCameras by remember { mutableStateOf(emptyList<CameraChoice>()) }
-    var cameraKey by rememberSaveable { mutableStateOf<String?>(null) }
-    var unavailableCameras by remember { mutableStateOf(emptySet<String>()) }
+    var activeCamera by remember { mutableStateOf<Camera?>(null) }
+    var showCameras by remember { mutableStateOf(false) }
     var sampleId by rememberSaveable { mutableStateOf("") }
     val requestCamera = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         permissionDenied = !granted
@@ -216,18 +244,8 @@ private fun AreaScreen(vm: AreaViewModel = viewModel()) {
     Box(Modifier.fillMaxSize().background(Color(0xFF101A16))) {
         // This camera surface survives every marker-loss and display-mode update.
         // Circle/sensitivity panels cover it without rebinding the CameraX session.
-        if (state.mode == InputMode.CAMERA) CameraAnalysis(vm, cameraKey,
-            onCameras = { availableCameras = it.filterNot { choice -> choice.key in unavailableCameras } },
-            onUnavailable = { failedKey ->
-                val failed = failedKey ?: availableCameras.firstOrNull()?.key
-                if (failed != null) unavailableCameras = unavailableCameras + failed
-                availableCameras = availableCameras.filterNot { it.key in unavailableCameras }
-                val fallback = availableCameras.firstOrNull()
-                if (fallback == null) vm.cameraError() else {
-                    vm.startCamera(); cameraKey = fallback.key
-                    Toast.makeText(context, R.string.camera_switch_failed, Toast.LENGTH_LONG).show()
-                }
-            }, modifier = Modifier.fillMaxSize())
+        if (state.mode == InputMode.CAMERA) CameraAnalysis(vm, state.cameraKey,
+            onCameras = { availableCameras = it }, onCamera = { activeCamera = it }, modifier = Modifier.fillMaxSize())
         else result?.annotated?.let {
             Image(it.asImageBitmap(), stringResource(R.string.source_frame), Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
         }
@@ -254,11 +272,6 @@ private fun AreaScreen(vm: AreaViewModel = viewModel()) {
                             colors = ButtonDefaults.textButtonColors(contentColor = onPanel, disabledContentColor = muted)) {
                             Text(stringResource(if (state.mode == InputMode.CAMERA) R.string.freeze_short else R.string.live))
                         }
-                        TextButton(onClick = { if (state.mode == InputMode.CAMERA) vm.stopCamera(); showSave = true },
-                            enabled = valid && !state.busy,
-                            colors = ButtonDefaults.textButtonColors(contentColor = onPanel, disabledContentColor = muted)) {
-                            Text(stringResource(R.string.save_short))
-                        }
                         Box {
                             TextButton(onClick = { showMenu = true }, colors = ButtonDefaults.textButtonColors(contentColor = onPanel)) {
                                 Text(stringResource(R.string.more))
@@ -278,6 +291,7 @@ private fun AreaScreen(vm: AreaViewModel = viewModel()) {
                         Modifier.height(62.dp), fontSize = 42.sp, fontWeight = FontWeight.Medium, maxLines = 1)
                     Text(stringResource(when {
                         state.trackingLost -> R.string.last_reading
+                        state.trackingIssue == R.string.camera_unavailable -> R.string.camera_error_title
                         state.busy -> R.string.checking
                         valid && state.mode == InputMode.CAMERA -> R.string.live_calibrated
                         valid -> R.string.frozen_reading
@@ -291,15 +305,14 @@ private fun AreaScreen(vm: AreaViewModel = viewModel()) {
                 }
             }
         }
-        if (display == DisplayMode.CAMERA && state.mode == InputMode.CAMERA && availableCameras.size > 1) {
-            FilledIconButton(onClick = {
-                val current = availableCameras.indexOfFirst { it.key == cameraKey }.coerceAtLeast(0)
-                val next = availableCameras[(current + 1) % availableCameras.size]
-                vm.startCamera()
-                cameraKey = next.key
-            }, modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 202.dp, end = 16.dp),
-                colors = IconButtonDefaults.filledIconButtonColors(containerColor = panel, contentColor = onPanel)) {
-                Icon(painterResource(R.drawable.ic_switch_camera), stringResource(R.string.switch_camera))
+        if (display == DisplayMode.CAMERA && availableCameras.isNotEmpty()) {
+            Row(Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 202.dp, end = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                FlashlightButton(activeCamera, panel, onPanel)
+                FilledIconButton(onClick = { showCameras = true },
+                    colors = IconButtonDefaults.filledIconButtonColors(containerColor = panel, contentColor = onPanel)) {
+                    Icon(painterResource(R.drawable.ic_switch_camera), stringResource(R.string.switch_camera))
+                }
             }
         }
         if (permissionDenied && state.mode == InputMode.IDLE) {
@@ -330,6 +343,16 @@ private fun AreaScreen(vm: AreaViewModel = viewModel()) {
                 Button(onClick = { display = DisplayMode.CAMERA }, Modifier.weight(1f).height(52.dp), colors = ButtonDefaults.buttonColors(containerColor = if (display == DisplayMode.CAMERA) Color(0xFF176B52) else Color(0xFF263F34))) {
                     Text(stringResource(R.string.camera), maxLines = 1)
                 }
+                FilledIconButton(
+                    onClick = { if (state.mode == InputMode.CAMERA) vm.stopCamera(); showSave = true },
+                    enabled = valid && !state.busy,
+                    modifier = Modifier.size(52.dp), shape = CircleShape,
+                    colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = Color(0xFFD7EDDC), contentColor = Color(0xFF123D30),
+                        disabledContainerColor = Color(0xFF263F34), disabledContentColor = muted.copy(alpha = 0.38f)),
+                ) {
+                    Icon(painterResource(R.drawable.ic_save), stringResource(R.string.save_short))
+                }
                 Button(onClick = { display = DisplayMode.CIRCLE }, Modifier.weight(1f).height(52.dp), contentPadding = PaddingValues(horizontal = 8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = if (display == DisplayMode.CIRCLE) Color(0xFF4B7864) else Color(0xFF263F34))) {
                     Text(stringResource(R.string.circle_sensitivity), fontSize = 13.sp, maxLines = 1)
@@ -337,6 +360,20 @@ private fun AreaScreen(vm: AreaViewModel = viewModel()) {
             }
         }
     }
+    if (showCameras) AlertDialog(onDismissRequest = { showCameras = false },
+        title = { Text(stringResource(R.string.choose_camera)) },
+        text = { Column(Modifier.verticalScroll(rememberScrollState())) {
+            Text(stringResource(R.string.camera_picker_help), Modifier.padding(bottom = 12.dp))
+            val selected = state.cameraKey ?: availableCameras.firstOrNull()?.key
+            availableCameras.forEach { choice ->
+                Row(Modifier.fillMaxWidth().selectable(selected = choice.key == selected, role = Role.RadioButton,
+                    onClick = { showCameras = false; vm.selectCamera(choice.key) }).padding(vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(selected = choice.key == selected, onClick = null)
+                    Text(choice.label(context), Modifier.padding(start = 8.dp))
+                }
+            }
+        } }, confirmButton = { TextButton(onClick = { showCameras = false }) { Text(stringResource(R.string.close)) } })
     if (showSave) AlertDialog(onDismissRequest = { showSave = false }, title = { Text(stringResource(R.string.save)) },
         text = { Column {
             Text(if (valid) stringResource(R.string.area_cm, result!!.areaMm2!! / 100) else stringResource(R.string.none))
