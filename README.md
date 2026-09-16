@@ -22,7 +22,9 @@ For a stiffer mask, attach the printout to a 3D-printed backing made from the [0
 
 If markers disappear, the app keeps the last calibrated reading and labels it **Last reading**. Measurements resume when tracking returns. Saving a held reading stores its original calibrated image.
 
-The camera button opens a list of available cameras and lenses. Your camera choice and leaf sensitivity are remembered. Entries marked **automatic** let the phone choose the lens; choose an individual lens when you want to keep it fixed.
+The screen stays awake during live measurement in both Camera and Calibration. Normal screen timeout resumes when you freeze the measurement or leave the app.
+
+The camera button opens a list of available cameras and lenses. Your camera choice, matte color, and leaf sensitivity are remembered. The white or blue circle beside the flashlight shows the selected matte; change it in **Calibration**. Entries marked **automatic** let the phone choose the lens; choose an individual lens when you want to keep it fixed.
 
 Use the flashlight button beside the camera button to toggle the selected camera’s light. It stays on in circle preview and turns off when you freeze or change cameras. Cameras without a flash show a disabled button.
 

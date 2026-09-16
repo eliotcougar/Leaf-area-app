@@ -55,6 +55,7 @@
     <string name="saving_last_reading">Saving the last calibrated image, captured before tracking was lost.</string>
     <string name="template_step">Mask STEP · 0.4 mm</string>
     <string name="switch_camera">Switch camera</string>
+    <string name="selected_matte">Selected matte: %1$s</string>
     <string name="flashlight_on">Turn flashlight on</string>
     <string name="flashlight_off">Turn flashlight off</string>
     <string name="flashlight_unavailable">Flashlight unavailable</string>

@@ -1,7 +1,7 @@
 # Android build environment on this PC
 
 The root contains the LI-6800 Leaf Area app. Use `tools/build.ps1` to
-build it; see `README.md` and `docs/VALIDATION-v044.md` for current behavior and checks.
+build it; see `README.md` and `docs/VALIDATION-v046.md` for current behavior and checks.
 The preparation results below remain a historical record of toolchain setup.
 
 Inspected on 2026-09-10 at `E:\programming\li6800-area-app`.
@@ -123,7 +123,7 @@ into a command string or pass an empty ABI flag: this previously produced a stra
 See the preparation result below for actual command outcomes. The smoke fixture
 only checks the Android build toolchain. Runtime, camera permissions, calibration,
 measurement accuracy, Compose dependencies, release signing, and device compatibility
-are separate checks. Current app verification is recorded in `docs/VALIDATION-v044.md`.
+are separate checks. Current app verification is recorded in `docs/VALIDATION-v046.md`.
 
 Borrowed instruction sources: `E:\programming\v2rayng\AGENTS.md`,
 `E:\programming\v2rayng\.tools\build-v2rayng-release-verify.ps1`, and the inspected

@@ -1,6 +1,7 @@
 package org.li6800.area
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -11,6 +12,7 @@ import android.provider.Settings
 import android.util.Log
 import android.util.Size
 import android.widget.Toast
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -34,6 +36,7 @@ import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -41,6 +44,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -186,6 +191,13 @@ private fun AreaScreen(vm: AreaViewModel = viewModel()) {
     val result = state.measurement
     val context = LocalContext.current
     var display by rememberSaveable { mutableStateOf(DisplayMode.CAMERA) }
+    val window = (context as Activity).window
+    DisposableEffect(window, state.mode == InputMode.CAMERA) {
+        // Android honors this only while the window is visible in the foreground.
+        if (state.mode == InputMode.CAMERA) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        onDispose { window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) }
+    }
     var showMenu by remember { mutableStateOf(false) }
     var showHistory by remember { mutableStateOf(false) }
     var showHelp by remember { mutableStateOf(false) }
@@ -305,13 +317,23 @@ private fun AreaScreen(vm: AreaViewModel = viewModel()) {
                 }
             }
         }
-        if (display == DisplayMode.CAMERA && availableCameras.isNotEmpty()) {
+        if (display == DisplayMode.CAMERA) {
             Row(Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 202.dp, end = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                FlashlightButton(activeCamera, panel, onPanel)
-                FilledIconButton(onClick = { showCameras = true },
-                    colors = IconButtonDefaults.filledIconButtonColors(containerColor = panel, contentColor = onPanel)) {
-                    Icon(painterResource(R.drawable.ic_switch_camera), stringResource(R.string.switch_camera))
+                horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                val matteLabel = stringResource(R.string.selected_matte,
+                    stringResource(if (state.backing == Backing.WHITE) R.string.white else R.string.blue))
+                // Match the flashlight's 40 dp circle inside its 48 dp touch target.
+                Box(Modifier.size(48.dp).semantics { contentDescription = matteLabel }, contentAlignment = Alignment.Center) {
+                    Box(Modifier.size(40.dp).background(
+                        if (state.backing == Backing.WHITE) Color.White else Color(0xFF1565C0), CircleShape)
+                        .border(1.dp, muted, CircleShape))
+                }
+                if (availableCameras.isNotEmpty()) {
+                    FlashlightButton(activeCamera, panel, onPanel)
+                    FilledIconButton(onClick = { showCameras = true },
+                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = panel, contentColor = onPanel)) {
+                        Icon(painterResource(R.drawable.ic_switch_camera), stringResource(R.string.switch_camera))
+                    }
                 }
             }
         }

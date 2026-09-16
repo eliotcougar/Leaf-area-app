@@ -43,7 +43,9 @@ class AreaViewModel(application: Application) : AndroidViewModel(application) {
     private val preferences = application.getSharedPreferences("measurement-settings", android.content.Context.MODE_PRIVATE)
     var state by mutableStateOf(AreaState(sensitivity = preferences.getFloat("sensitivity", .5f)
         .takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: .5f,
-        cameraKey = preferences.getString("camera-key", null))); private set
+        cameraKey = preferences.getString("camera-key", null),
+        backing = Backing.entries.firstOrNull { it.name == preferences.getString("backing", null) }
+            ?: Backing.WHITE)); private set
     val executor = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
     private val generation = AtomicLong()
@@ -145,6 +147,7 @@ class AreaViewModel(application: Application) : AndroidViewModel(application) {
     fun settings(backing: Backing = state.backing, sensitivity: Float = state.sensitivity) {
         if (!sensitivity.isFinite()) return
         val sensitivity = sensitivity.coerceIn(0f, 1f)
+        if (backing != state.backing) preferences.edit().putString("backing", backing.name).apply()
         if (sensitivity != state.sensitivity) preferences.edit().putFloat("sensitivity", sensitivity).apply()
         state = state.copy(backing = backing, sensitivity = sensitivity)
         val token = generation.get()
